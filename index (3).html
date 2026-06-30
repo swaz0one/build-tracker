@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0D1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BuildTracker">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<title>BuildTracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg:#0D1117;--surface:#161B22;--card:#1C2128;--border:#30363D;
+  --accent:#E8440A;--accent-dim:rgba(232,68,10,0.15);
+  --text:#E6EDF3;--muted:#8B949E;--green:#3FB950;--yellow:#D29922;--red:#F85149;
+}
+
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:90px}
+
+/* ── GARAGE SCREEN ── */
+#loginScreen{display:flex}
+#garageScreen{display:none}
+#trackerScreen{display:none}
+
+.login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.login-logo{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;margin-bottom:8px}
+.login-logo span{color:var(--accent)}
+.login-sub{color:var(--muted);font-size:14px;margin-bottom:36px}
+.google-btn{display:flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:none;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:transform 0.15s}
+.google-btn:hover{transform:translateY(-1px)}
+.login-form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px}
+.login-form input{text-align:left}
+.login-toggle{font-size:13px;color:var(--muted);margin-top:14px}
+.login-toggle a{color:var(--accent);cursor:pointer;font-weight:600;text-decoration:none}
+.login-error{color:var(--red);font-size:13px;margin-top:6px;min-height:18px}
+.login-footer{position:absolute;bottom:24px;font-size:11px;color:var(--muted)}
+
+.garage-header{padding:24px 16px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
+.garage-header h1{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700}
+.garage-header h1 span{color:var(--accent)}
+.garage-header p{font-size:13px;color:var(--muted);margin-top:3px}
+
+.garage-grid{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+
+.car-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  overflow:hidden;cursor:pointer;transition:border-color 0.15s,transform 0.15s;
+  position:relative;
+}
+.car-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.car-card .car-thumb{
+  width:100%;height:120px;object-fit:cover;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+}
+.car-card .car-thumb img{width:100%;height:120px;object-fit:cover;display:block}
+.car-thumb-placeholder{width:100%;height:120px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--border)}
+.car-card .car-info{padding:10px 12px 12px}
+.car-card .car-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.car-card .car-sub{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.car-card .car-spent{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--accent);margin-top:6px}
+.car-card .car-edit-btn{
+  position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);border:none;
+  color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;
+  opacity:0;transition:opacity 0.15s;
+}
+.car-card:hover .car-edit-btn{opacity:1}
+
+.add-car-card{
+  background:transparent;border:1px dashed var(--border);border-radius:14px;
+  height:180px;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;color:var(--muted);
+  font-size:13px;transition:border-color 0.15s,color 0.15s;
+}
+.add-car-card:hover{border-color:var(--accent);color:var(--accent)}
+.add-car-card svg{opacity:0.5}
+
+/* ── TRACKER HEADER ── */
+.tracker-header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px 0;position:sticky;top:0;z-index:100}
+.tracker-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.back-btn{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.back-btn:hover{border-color:var(--accent);color:var(--accent)}
+.car-header-info{flex:1;min-width:0}
+.car-header-name{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.car-header-sub{font-size:11px;color:var(--muted)}
+.budget-pill{display:flex;align-items:baseline;gap:4px;flex-shrink:0}
+.budget-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px}
+.budget-total{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--accent)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-left:6px;vertical-align:middle}
+.sync-dot.syncing{background:var(--yellow);animation:pulse 0.8s ease infinite}
+
+.search-row{display:flex;gap:8px;margin-bottom:12px}
+.search-wrap{position:relative;flex:1}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search-input{padding-left:34px!important}
+
+.category-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}
+.category-scroll::-webkit-scrollbar{display:none}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);white-space:nowrap;transition:all 0.15s;flex-shrink:0}
+.chip:hover{color:var(--text);border-color:var(--muted)}
+.chip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+
+/* ── MAIN ── */
+.main{padding:16px}
+.status-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:2px}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px}
+.stat-card.pending .stat-val{color:var(--yellow)}
+.stat-card.bought .stat-val{color:var(--green)}
+.stat-card.total .stat-val{color:var(--accent)}
+
+.parts-grid{display:grid;gap:10px}
+.part-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;transition:border-color 0.15s}
+.part-card:hover{border-color:var(--muted)}
+.part-card.status-pending{border-left:3px solid var(--yellow)}
+.part-card.status-bought{border-left:3px solid var(--green)}
+.part-card.status-needed{border-left:3px solid var(--muted)}
+.part-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.part-name{font-weight:600;font-size:15px;line-height:1.3;flex:1}
+.part-price{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;white-space:nowrap}
+.part-price.no-price{color:var(--muted);font-size:13px;font-family:'Inter',sans-serif;font-weight:400}
+.part-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag{font-size:11px;padding:3px 8px;border-radius:5px;font-weight:500;border:1px solid transparent}
+.tag-cat{background:rgba(139,148,158,0.12);color:var(--muted);border-color:rgba(139,148,158,0.2)}
+.tag-store{background:rgba(232,68,10,0.1);color:#ff6b3d;border-color:rgba(232,68,10,0.2)}
+.tag-bought{background:rgba(63,185,80,0.1);color:var(--green);border-color:rgba(63,185,80,0.2)}
+.tag-pending{background:rgba(210,153,34,0.1);color:var(--yellow);border-color:rgba(210,153,34,0.2)}
+.tag-needed{background:rgba(139,148,158,0.1);color:var(--muted);border-color:rgba(139,148,158,0.2)}
+.part-notes{font-size:12px;color:var(--muted);margin-top:6px;font-style:italic}
+.part-actions{display:flex;gap:6px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;flex-wrap:wrap}
+.part-invoice-thumb{width:100%;max-height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--border);margin-top:8px;display:block}
+
+/* ── INPUTS ── */
+input[type=text],input[type=number],select,textarea{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;padding:9px 12px;outline:none;transition:border-color 0.15s}
+input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:60px}
+select option{background:var(--card)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;white-space:nowrap;font-family:'Inter',sans-serif}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{background:#d03d09}
+.btn-ghost{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+.btn-danger{background:rgba(248,81,73,0.15);color:var(--red);border:1px solid rgba(248,81,73,0.3)}
+.btn-danger:hover{background:rgba(248,81,73,0.25)}
+
+/* ── PHOTO UPLOAD ── */
+.photo-upload-area{background:var(--card);border:1px dashed var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:border-color 0.15s}
+.photo-upload-area:hover{border-color:var(--accent)}
+.photo-preview-empty{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+.car-photo-upload{width:100%;height:160px;background:var(--card);border:1px dashed var(--border);border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13px;overflow:hidden;transition:border-color 0.15s}
+.car-photo-upload:hover{border-color:var(--accent)}
+.car-photo-upload img{width:100%;height:100%;object-fit:cover}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;animation:slideUp 0.2s ease}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:16px}
+.form-group{margin-bottom:12px}
+.form-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:0.5px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:8px;margin-top:16px}
+.modal-actions .btn{flex:1;justify-content:center}
+
+/* ── EMPTY / LOADING ── */
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty svg{opacity:0.3;margin-bottom:12px}
+.empty h3{font-size:16px;color:var(--text);margin-bottom:6px}
+.empty p{font-size:13px}
+.loading-indicator{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:24px;right:20px;width:52px;height:52px;background:var(--accent);border:none;border-radius:50%;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(232,68,10,0.4);display:flex;align-items:center;justify-content:center;transition:transform 0.15s,box-shadow 0.15s;z-index:150}
+.fab:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(232,68,10,0.5)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:all 0.2s;z-index:300;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+@media(min-width:480px){
+  .parts-grid{grid-template-columns:repeat(2,1fr)}
+  .modal-overlay{align-items:center}
+  .modal{border-radius:16px;margin:16px}
+  .fab{right:24px;bottom:28px}
+  .garage-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     GARAGE SCREEN
+════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-logo">Build<span>Tracker</span></div>
+    <div class="login-sub" id="loginModeLabel">Sign in to access your garage</div>
+    <div class="login-form">
+      <input type="text" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPassword" placeholder="Password">
+      <button class="btn btn-accent" style="justify-content:center" id="loginSubmitBtn" onclick="handleAuthSubmit()">Sign In</button>
+    </div>
+    <div class="login-error" id="loginStatus"></div>
+    <div class="login-toggle" id="loginToggleWrap">
+      Don't have an account? <a onclick="toggleAuthMode()">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<div id="garageScreen">
+  <div class="garage-header" style="display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <h1>My <span>Garage</span></h1>
+      <p id="userEmailLabel">Select a car to view its build tracker</p>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign Out</button>
+  </div>
+  <div class="garage-grid" id="garageGrid">
+    <div class="loading-indicator"><div class="spinner"></div>Loading garage…</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TRACKER SCREEN
+════════════════════════════════════════════════════ -->
+<div id="trackerScreen">
+  <div class="tracker-header">
+    <div class="tracker-top">
+      <button class="back-btn" onclick="goToGarage()">← Garage</button>
+      <div class="car-header-info">
+        <div class="car-header-name" id="headerCarName">—</div>
+        <div class="car-header-sub" id="headerCarSub"></div>
+      </div>
+      <div class="budget-pill">
+        <span class="budget-label">Spent</span>
+        <span class="budget-total" id="headerTotal">$0</span>
+      </div>
+      <span class="sync-dot" id="syncDot"></span>
+    </div>
+    <div class="search-row">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search parts…">
+      </div>
+      <button class="btn btn-ghost" onclick="openImport()">Import</button>
+      <button class="btn btn-ghost" onclick="openExport()">Export</button>
+    </div>
+    <div class="category-scroll" id="categoryChips"></div>
+  </div>
+
+  <div class="main">
+    <div class="status-bar">
+      <div class="stat-card bought"><div class="stat-val" id="statBought">$0</div><div class="stat-label">Purchased</div></div>
+      <div class="stat-card pending"><div class="stat-val" id="statPending">$0</div><div class="stat-label">On Order</div></div>
+      <div class="stat-card total"><div class="stat-val" id="statCount">0</div><div class="stat-label">Parts</div></div>
+    </div>
+    <div id="loadingState" class="loading-indicator"><div class="spinner"></div>Loading parts…</div>
+    <div id="partsGrid" class="parts-grid" style="display:none"></div>
+    <div id="emptyState" class="empty" style="display:none">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <h3>No parts yet</h3><p>Tap + to add your first part</p>
+    </div>
+  </div>
+
+  <button class="fab" onclick="openModal()" title="Add part">+</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     CAR MODAL (add/edit car)
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="carModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="carModalTitle">Add Car</div>
+
+    <div class="form-group">
+      <label class="form-label">Car Photo</label>
+      <div class="car-photo-upload" id="carPhotoUpload" style="position:relative" onclick="document.getElementById('carPhotoFile').click()">
+        <input type="file" id="carPhotoFile" accept="image/*" style="display:none" onchange="handleCarPhoto(event)">
+        <div id="carPhotoPlaceholder" style="pointer-events:none">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <span style="margin-top:6px">Tap to add car photo</span>
+        </div>
+        <img id="carPhotoPreview" style="display:none;width:100%;height:100%;object-fit:cover;pointer-events:none" alt="Car">
+        <div id="carPhotoChangeOverlay" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);color:#fff;font-size:13px;font-weight:600;pointer-events:none">Tap to change photo</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Car Name / Nickname *</label>
+      <input type="text" id="cName" placeholder="e.g. Project Silvia, The Daily, GTR">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Year</label>
+        <input type="text" id="cYear" placeholder="e.g. 1998">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Make</label>
+        <input type="text" id="cMake" placeholder="e.g. Nissan">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Model</label>
+      <input type="text" id="cModel" placeholder="e.g. Silvia S15">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea id="cNotes" placeholder="Chassis number, mods already done…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCarModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="saveCar()">Save Car</button>
+    </div>
+    <div id="carDeleteWrap" style="display:none;margin-top:10px">
+      <button class="btn btn-danger" style="width:100%;justify-content:center" onclick="deleteCar()">Delete This Car & All Parts</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     PART MODAL (add/edit part)
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="partModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="partModalTitle">Add Part</div>
+
+    <div class="form-group">
+      <label class="form-label">Part / Item Name *</label>
+      <input type="text" id="fName" placeholder="e.g. Coilovers">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Price ($)</label>
+        <input type="number" id="fPrice" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="fStatus">
+          <option value="needed">Needed</option>
+          <option value="pending">On Order</option>
+          <option value="bought">Purchased</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="fCategory">
+          <optgroup label="Performance">
+            <option value="Suspension">Suspension</option>
+            <option value="Brakes">Brakes</option>
+            <option value="Engine">Engine</option>
+            <option value="Cooling">Cooling</option>
+            <option value="Drivetrain">Drivetrain</option>
+            <option value="Steering">Steering</option>
+            <option value="Exhaust">Exhaust</option>
+            <option value="Tyres & Wheels">Tyres &amp; Wheels</option>
+          </optgroup>
+          <optgroup label="Appearance">
+            <option value="Cosmetics">Cosmetics</option>
+            <option value="Body">Body</option>
+            <option value="Interior">Interior</option>
+            <option value="Lighting">Lighting</option>
+          </optgroup>
+          <optgroup label="Maintenance">
+            <option value="Service Items">Service Items</option>
+            <option value="Consumables">Consumables</option>
+            <option value="Electrical">Electrical</option>
+          </optgroup>
+          <optgroup label="Ownership">
+            <option value="Registration">Registration</option>
+            <option value="Insurance">Insurance</option>
+            <option value="Inspection / RWC">Inspection / RWC</option>
+            <option value="Car">Car Purchase</option>
+          </optgroup>
+          <optgroup label="Other">
+            <option value="Miscellaneous">Miscellaneous</option>
+            <option value="Other">Other</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Supplier</label>
+        <input type="text" id="fSupplier" placeholder="e.g. Just Jap">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea id="fNotes" placeholder="Part numbers, links, specs…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Invoice / Receipt Photo</label>
+      <div class="photo-upload-area" onclick="document.getElementById('fPhoto').click()">
+        <input type="file" id="fPhoto" accept="image/*" style="display:none" onchange="handleInvoicePhoto(event)">
+        <div id="invoicePhotoPlaceholder" class="photo-preview-empty">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <span>Tap to attach invoice photo</span>
+        </div>
+        <img id="invoicePhotoImg" style="display:none;width:100%;border-radius:8px;max-height:160px;object-fit:cover" alt="Invoice">
+        <button type="button" id="removeInvoiceBtn" style="display:none;margin-top:8px" class="btn btn-danger btn-sm" onclick="removeInvoicePhoto(event)">Remove Photo</button>
+      </div>
+      <div id="uploadProgress" style="display:none;margin-top:6px;font-size:12px;color:var(--muted)">Uploading…</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closePartModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="savePart()">Save Part</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     IMPORT MODAL
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Bulk Import</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">One part per line — <code style="background:var(--card);padding:2px 5px;border-radius:4px">Name: $Price Supplier</code> or just a name.</p>
+    <div class="form-group">
+      <textarea id="importText" style="min-height:160px" placeholder="Coilovers: $1,549 Just Jap&#10;Ebrake: $113.74 eBay&#10;power steering hoses:&#10;thermostat:"></textarea>
+    </div>
+    <div class="form-row" style="margin-bottom:12px">
+      <div class="form-group">
+        <label class="form-label">Default Category</label>
+        <select id="importCategory">
+          <option value="Suspension">Suspension</option>
+          <option value="Brakes">Brakes</option>
+          <option value="Engine">Engine</option>
+          <option value="Cooling">Cooling</option>
+          <option value="Drivetrain">Drivetrain</option>
+          <option value="Steering">Steering</option>
+          <option value="Exhaust">Exhaust</option>
+          <option value="Tyres & Wheels">Tyres &amp; Wheels</option>
+          <option value="Cosmetics">Cosmetics</option>
+          <option value="Body">Body</option>
+          <option value="Interior">Interior</option>
+          <option value="Lighting">Lighting</option>
+          <option value="Service Items">Service Items</option>
+          <option value="Consumables">Consumables</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Registration">Registration</option>
+          <option value="Insurance">Insurance</option>
+          <option value="Inspection / RWC">Inspection / RWC</option>
+          <option value="Car">Car Purchase</option>
+          <option value="Miscellaneous">Miscellaneous</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Default Status</label>
+        <select id="importStatus">
+          <option value="needed">Needed</option>
+          <option value="pending">On Order</option>
+          <option value="bought">Purchased</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeImport()">Cancel</button>
+      <button class="btn btn-accent" onclick="runImport()">Import Parts</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Export Build Record</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Create a record of every part, price, and supplier for this car — great for printing, sharing, or handing to a future owner.</p>
+    <div class="modal-actions" style="flex-direction:column">
+      <button class="btn btn-accent" style="width:100%;justify-content:center" onclick="exportPrintable()">
+        🖨 Print / Save as PDF
+      </button>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="exportCSV()">
+        📊 Download as Spreadsheet (CSV)
+      </button>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="closeExport()">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+
+const SUPABASE_URL = 'https://qfvszhrelmrbfxwlwsvf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmdnN6aHJlbG1yYmZ4d2x3c3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MDExMzcsImV4cCI6MjA5ODI3NzEzN30.P4S2FvT_6vpS-MJnhVfS6jDD0ciO1p5Pg6dHP2wFg7M';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── STATE ──────────────────────────────────────────
+let currentUser = null;
+let cars = [];
+let parts = [];
+let activeCar = null;
+let activeCategory = 'All';
+let editPartId = null;
+let editCarId = null;
+let pendingInvoiceFile = null;
+let pendingInvoiceUrl = null;
+let pendingCarPhotoFile = null;
+let pendingCarPhotoUrl = null;
+
+// ── UTILS ──────────────────────────────────────────
+function fmt(n){ return n ? '$'+Number(n).toLocaleString('en-AU',{minimumFractionDigits:0,maximumFractionDigits:2}) : '$0'; }
+function esc(s){ return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
+function statusLabel(s){ return {bought:'Purchased',pending:'On Order',needed:'Needed'}[s]||s; }
+function setSyncing(v){ const d=document.getElementById('syncDot'); if(d) d.className='sync-dot'+(v?' syncing':''); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+
+// ── GARAGE ─────────────────────────────────────────
+async function loadGarage(){
+  const cached = JSON.parse(localStorage.getItem('bt_cars')||'[]');
+  if(cached.length){ cars=cached; renderGarage(); }
+
+  const {data,error} = await sb.from('cars').select('*').order('created_at',{ascending:true});
+  if(!error && data){
+    cars = data;
+    localStorage.setItem('bt_cars', JSON.stringify(cars));
+    renderGarage();
+  }
+}
+
+async function getCarSpend(carId){
+  const {data} = await sb.from('build_parts').select('price,status').eq('car_id',carId).eq('status','bought');
+  return (data||[]).reduce((s,p)=>s+(p.price||0),0);
+}
+
+async function renderGarage(){
+  const grid = document.getElementById('garageGrid');
+
+  // fetch spend for each car
+  const spends = await Promise.all(cars.map(c=>getCarSpend(c.id)));
+
+  grid.innerHTML = cars.map((c,i)=>`
+    <div class="car-card" onclick="openCar('${c.id}')">
+      <button class="car-edit-btn" onclick="event.stopPropagation();openEditCar('${c.id}')">Edit</button>
+      ${c.photo_url
+        ? `<div class="car-thumb"><img src="${esc(c.photo_url)}" alt="${esc(c.name)}"></div>`
+        : `<div class="car-thumb-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l3-3h8l3 3h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>`
+      }
+      <div class="car-info">
+        <div class="car-name">${esc(c.name)}</div>
+        <div class="car-sub">${esc([c.year,c.make,c.model].filter(Boolean).join(' '))}</div>
+        <div class="car-spent">${fmt(spends[i])}</div>
+      </div>
+    </div>
+  `).join('') + `
+    <div class="add-car-card" onclick="openAddCar()">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+      Add a Car
+    </div>`;
+}
+
+function openCar(carId){
+  activeCar = cars.find(c=>c.id===carId);
+  if(!activeCar) return;
+  document.getElementById('garageScreen').style.display='none';
+  document.getElementById('trackerScreen').style.display='block';
+  document.getElementById('headerCarName').textContent = activeCar.name;
+  document.getElementById('headerCarSub').textContent = [activeCar.year,activeCar.make,activeCar.model].filter(Boolean).join(' ');
+  activeCategory = 'All';
+  document.getElementById('searchInput').value='';
+  loadParts();
+}
+
+function goToGarage(){
+  document.getElementById('trackerScreen').style.display='none';
+  document.getElementById('garageScreen').style.display='block';
+  activeCar = null;
+  parts = [];
+  loadGarage();
+}
+
+// ── CAR MODAL ──────────────────────────────────────
+function openAddCar(){
+  editCarId=null;
+  pendingCarPhotoFile=null;
+  pendingCarPhotoUrl=null;
+  document.getElementById('carModalTitle').textContent='Add Car';
+  document.getElementById('cName').value='';
+  document.getElementById('cYear').value='';
+  document.getElementById('cMake').value='';
+  document.getElementById('cModel').value='';
+  document.getElementById('cNotes').value='';
+  document.getElementById('carPhotoPreview').style.display='none';
+  document.getElementById('carPhotoPlaceholder').style.display='flex';
+  document.getElementById('carPhotoChangeOverlay').style.display='none';
+  document.getElementById('carPhotoFile').value='';
+  document.getElementById('carDeleteWrap').style.display='none';
+  document.getElementById('carModal').classList.add('open');
+}
+
+function openEditCar(carId){
+  const c = cars.find(x=>x.id===carId);
+  if(!c) return;
+  editCarId=carId;
+  pendingCarPhotoFile=null;
+  pendingCarPhotoUrl=c.photo_url||null;
+  document.getElementById('carModalTitle').textContent='Edit Car';
+  document.getElementById('cName').value=c.name||'';
+  document.getElementById('cYear').value=c.year||'';
+  document.getElementById('cMake').value=c.make||'';
+  document.getElementById('cModel').value=c.model||'';
+  document.getElementById('cNotes').value=c.notes||'';
+  document.getElementById('carPhotoFile').value='';
+  if(c.photo_url){
+    document.getElementById('carPhotoPreview').src=c.photo_url;
+    document.getElementById('carPhotoPreview').style.display='block';
+    document.getElementById('carPhotoPlaceholder').style.display='none';
+    document.getElementById('carPhotoChangeOverlay').style.display='flex';
+  } else {
+    document.getElementById('carPhotoPreview').style.display='none';
+    document.getElementById('carPhotoPlaceholder').style.display='flex';
+    document.getElementById('carPhotoChangeOverlay').style.display='none';
+  }
+  document.getElementById('carDeleteWrap').style.display='block';
+  document.getElementById('carModal').classList.add('open');
+}
+
+function closeCarModal(){ document.getElementById('carModal').classList.remove('open'); }
+
+function handleCarPhoto(event){
+  const file=event.target.files[0]; if(!file) return;
+  pendingCarPhotoFile=file;
+  const r=new FileReader();
+  r.onload=e=>{
+    document.getElementById('carPhotoPreview').src=e.target.result;
+    document.getElementById('carPhotoPreview').style.display='block';
+    document.getElementById('carPhotoPlaceholder').style.display='none';
+    document.getElementById('carPhotoChangeOverlay').style.display='flex';
+  };
+  r.readAsDataURL(file);
+}
+
+async function saveCar(){
+  const name=document.getElementById('cName').value.trim();
+  if(!name){ showToast('Car name is required'); return; }
+
+  let photo_url=pendingCarPhotoUrl||null;
+  if(pendingCarPhotoFile){
+    const ext=pendingCarPhotoFile.name.split('.').pop()||'jpg';
+    const path=Date.now()+'_'+name.replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.'+ext;
+    const {error:upErr} = await sb.storage.from('car-photos').upload(path,pendingCarPhotoFile,{upsert:true});
+    if(!upErr){
+      const {data:urlData}=sb.storage.from('car-photos').getPublicUrl(path);
+      photo_url=urlData.publicUrl;
+    }
+  }
+
+  const payload={name,year:document.getElementById('cYear').value.trim()||null,make:document.getElementById('cMake').value.trim()||null,model:document.getElementById('cModel').value.trim()||null,notes:document.getElementById('cNotes').value.trim()||null,photo_url,user_id:currentUser.id};
+  let error;
+  if(editCarId){
+    ({error}=await sb.from('cars').update(payload).eq('id',editCarId));
+    if(!error){ const i=cars.findIndex(c=>c.id===editCarId); if(i!==-1) cars[i]={...cars[i],...payload}; }
+  } else {
+    const {data,error:e}=await sb.from('cars').insert(payload).select().single();
+    error=e;
+    if(!error && data) cars.push(data);
+  }
+
+  if(error){ showToast('⚠️ '+error.message); return; }
+  localStorage.setItem('bt_cars',JSON.stringify(cars));
+  showToast(editCarId?'✓ Car updated':'✓ Car added');
+  closeCarModal();
+  renderGarage();
+}
+
+async function deleteCar(){
+  if(!editCarId) return;
+  if(!confirm('Delete this car and ALL its parts? This cannot be undone.')) return;
+  const {error}=await sb.from('cars').delete().eq('id',editCarId);
+  if(error){ showToast('⚠️ '+error.message); return; }
+  cars=cars.filter(c=>c.id!==editCarId);
+  localStorage.setItem('bt_cars',JSON.stringify(cars));
+  showToast('Car deleted');
+  closeCarModal();
+  renderGarage();
+}
+
+// ── PARTS ──────────────────────────────────────────
+async function loadParts(){
+  document.getElementById('loadingState').style.display='block';
+  document.getElementById('partsGrid').style.display='none';
+  document.getElementById('emptyState').style.display='none';
+  setSyncing(true);
+
+  const {data,error}=await sb.from('build_parts').select('*').eq('car_id',activeCar.id).order('created_at',{ascending:false});
+  document.getElementById('loadingState').style.display='none';
+  if(!error && data){
+    parts=data;
+    localStorage.setItem('bt_parts_'+activeCar.id,JSON.stringify(parts));
+  } else {
+    parts=JSON.parse(localStorage.getItem('bt_parts_'+activeCar.id)||'[]');
+  }
+  setSyncing(false);
+  renderParts();
+}
+
+function renderParts(){
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  const filtered=parts.filter(p=>{
+    const matchCat=activeCategory==='All'||p.category===activeCategory;
+    const matchSearch=!search||p.name?.toLowerCase().includes(search)||p.supplier?.toLowerCase().includes(search)||p.notes?.toLowerCase().includes(search);
+    return matchCat&&matchSearch;
+  });
+
+  const bought=parts.filter(p=>p.status==='bought').reduce((s,p)=>s+(p.price||0),0);
+  const pending=parts.filter(p=>p.status==='pending').reduce((s,p)=>s+(p.price||0),0);
+  document.getElementById('statBought').textContent=fmt(bought);
+  document.getElementById('statPending').textContent=fmt(pending);
+  document.getElementById('statCount').textContent=parts.length;
+  document.getElementById('headerTotal').textContent=fmt(bought);
+
+  const cats=['All',...new Set(parts.map(p=>p.category).filter(Boolean).sort())];
+  document.getElementById('categoryChips').innerHTML=cats.map(c=>`<span class="chip ${c===activeCategory?'active':''}" onclick="setCategory('${c.replace(/'/g,"\\'")}')">${c==='All'?'All Parts':esc(c)}</span>`).join('');
+
+  const grid=document.getElementById('partsGrid');
+  const empty=document.getElementById('emptyState');
+  if(filtered.length===0){ grid.style.display='none'; empty.style.display='block'; }
+  else {
+    empty.style.display='none'; grid.style.display='grid';
+    grid.innerHTML=filtered.map(p=>`
+      <div class="part-card status-${p.status}">
+        <div class="part-header">
+          <div class="part-name">${esc(p.name)}</div>
+          ${p.price?`<div class="part-price">${fmt(p.price)}</div>`:`<div class="part-price no-price">TBD</div>`}
+        </div>
+        <div class="part-meta">
+          ${p.category?`<span class="tag tag-cat">${esc(p.category)}</span>`:''}
+          ${p.supplier?`<span class="tag tag-store">${esc(p.supplier)}</span>`:''}
+          <span class="tag tag-${p.status}">${statusLabel(p.status)}</span>
+        </div>
+        ${p.notes?`<div class="part-notes">${esc(p.notes)}</div>`:''}
+        ${p.photo_url?`<a href="${esc(p.photo_url)}" target="_blank"><img src="${esc(p.photo_url)}" alt="Invoice" class="part-invoice-thumb"></a>`:''}
+        <div class="part-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEditPart('${p.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePart('${p.id}')">Remove</button>
+          ${p.status!=='bought'?`<button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(63,185,80,0.3)" onclick="markBought('${p.id}')">✓ Mark Bought</button>`:''}
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ── PART MODAL ─────────────────────────────────────
+function openModal(){
+  editPartId=null;
+  pendingInvoiceFile=null;
+  pendingInvoiceUrl=null;
+  document.getElementById('partModalTitle').textContent='Add Part';
+  document.getElementById('fName').value='';
+  document.getElementById('fPrice').value='';
+  document.getElementById('fStatus').value='bought';
+  document.getElementById('fCategory').value='Other';
+  document.getElementById('fSupplier').value='';
+  document.getElementById('fNotes').value='';
+  document.getElementById('fPhoto').value='';
+  document.getElementById('invoicePhotoPlaceholder').style.display='flex';
+  document.getElementById('invoicePhotoImg').style.display='none';
+  document.getElementById('removeInvoiceBtn').style.display='none';
+  document.getElementById('partModal').classList.add('open');
+  setTimeout(()=>document.getElementById('fName').focus(),100);
+}
+
+function closePartModal(){ document.getElementById('partModal').classList.remove('open'); }
+
+function openEditPart(id){
+  const p=parts.find(x=>x.id===id); if(!p) return;
+  editPartId=id;
+  pendingInvoiceFile=null;
+  pendingInvoiceUrl=p.photo_url||null;
+  document.getElementById('partModalTitle').textContent='Edit Part';
+  document.getElementById('fName').value=p.name||'';
+  document.getElementById('fPrice').value=p.price||'';
+  document.getElementById('fStatus').value=p.status||'needed';
+  document.getElementById('fCategory').value=p.category||'Other';
+  document.getElementById('fSupplier').value=p.supplier||'';
+  document.getElementById('fNotes').value=p.notes||'';
+  document.getElementById('fPhoto').value='';
+  if(p.photo_url){
+    document.getElementById('invoicePhotoImg').src=p.photo_url;
+    document.getElementById('invoicePhotoImg').style.display='block';
+    document.getElementById('invoicePhotoPlaceholder').style.display='none';
+    document.getElementById('removeInvoiceBtn').style.display='inline-flex';
+  } else {
+    document.getElementById('invoicePhotoPlaceholder').style.display='flex';
+    document.getElementById('invoicePhotoImg').style.display='none';
+    document.getElementById('removeInvoiceBtn').style.display='none';
+  }
+  document.getElementById('partModal').classList.add('open');
+}
+
+function handleInvoicePhoto(event){
+  const file=event.target.files[0]; if(!file) return;
+  pendingInvoiceFile=file;
+  const r=new FileReader();
+  r.onload=e=>{
+    document.getElementById('invoicePhotoPlaceholder').style.display='none';
+    document.getElementById('invoicePhotoImg').src=e.target.result;
+    document.getElementById('invoicePhotoImg').style.display='block';
+    document.getElementById('removeInvoiceBtn').style.display='inline-flex';
+  };
+  r.readAsDataURL(file);
+}
+
+function removeInvoicePhoto(event){
+  event.stopPropagation();
+  pendingInvoiceFile=null; pendingInvoiceUrl=null;
+  document.getElementById('fPhoto').value='';
+  document.getElementById('invoicePhotoPlaceholder').style.display='flex';
+  document.getElementById('invoicePhotoImg').style.display='none';
+  document.getElementById('removeInvoiceBtn').style.display='none';
+}
+
+async function uploadInvoice(file,partName){
+  const ext=file.name.split('.').pop()||'jpg';
+  const path=Date.now()+'_'+partName.replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.'+ext;
+  document.getElementById('uploadProgress').style.display='block';
+  const {error}=await sb.storage.from('invoices').upload(path,file,{upsert:true});
+  document.getElementById('uploadProgress').style.display='none';
+  if(error){ showToast('Photo upload failed: '+error.message); return null; }
+  return sb.storage.from('invoices').getPublicUrl(path).data.publicUrl;
+}
+
+async function savePart(){
+  const name=document.getElementById('fName').value.trim();
+  if(!name){ showToast('Part name is required'); return; }
+
+  let photo_url=pendingInvoiceUrl||null;
+  if(pendingInvoiceFile) photo_url=await uploadInvoice(pendingInvoiceFile,name);
+
+  const part={
+    name, photo_url,
+    price:parseFloat(document.getElementById('fPrice').value)||null,
+    status:document.getElementById('fStatus').value,
+    category:document.getElementById('fCategory').value,
+    supplier:document.getElementById('fSupplier').value.trim()||null,
+    notes:document.getElementById('fNotes').value.trim()||null,
+    car_id:activeCar.id,
+  };
+
+  setSyncing(true);
+  let error;
+  if(editPartId){
+    ({error}=await sb.from('build_parts').update(part).eq('id',editPartId));
+    if(!error){ const i=parts.findIndex(p=>p.id===editPartId); if(i!==-1) parts[i]={...parts[i],...part}; }
+  } else {
+    const {data,error:e}=await sb.from('build_parts').insert(part).select().single();
+    error=e;
+    if(!error&&data) parts.unshift(data);
+  }
+
+  setSyncing(false);
+  if(error){ showToast('⚠️ '+error.message); return; }
+  localStorage.setItem('bt_parts_'+activeCar.id,JSON.stringify(parts));
+  showToast(editPartId?'✓ Updated':'✓ Part added');
+  closePartModal();
+  renderParts();
+}
+
+async function deletePart(id){
+  if(!confirm('Remove this part?')) return;
+  setSyncing(true);
+  const {error}=await sb.from('build_parts').delete().eq('id',id);
+  if(!error){ parts=parts.filter(p=>p.id!==id); localStorage.setItem('bt_parts_'+activeCar.id,JSON.stringify(parts)); renderParts(); showToast('Part removed'); }
+  else showToast('⚠️ Delete failed');
+  setSyncing(false);
+}
+
+async function markBought(id){
+  setSyncing(true);
+  const {error}=await sb.from('build_parts').update({status:'bought'}).eq('id',id);
+  if(!error){ const p=parts.find(x=>x.id===id); if(p) p.status='bought'; localStorage.setItem('bt_parts_'+activeCar.id,JSON.stringify(parts)); renderParts(); showToast('✓ Marked as purchased'); }
+  setSyncing(false);
+}
+
+function setCategory(cat){ activeCategory=cat; renderParts(); }
+
+// ── IMPORT ─────────────────────────────────────────
+function openImport(){ document.getElementById('importModal').classList.add('open'); }
+function closeImport(){ document.getElementById('importModal').classList.remove('open'); }
+
+async function runImport(){
+  const raw=document.getElementById('importText').value.trim();
+  const cat=document.getElementById('importCategory').value;
+  const status=document.getElementById('importStatus').value;
+  if(!raw) return;
+  const lines=raw.split('\n').map(l=>l.replace(/^[•\-\*]\s*/,'').trim()).filter(Boolean);
+  const toInsert=lines.map(line=>{
+    const match=line.match(/^(.+?):\s*\$?([\d,]+\.?\d*)\s*(.*)$/);
+    if(match) return {name:match[1].trim(),price:parseFloat(match[2].replace(/,/g,''))||null,supplier:match[3].trim()||null,category:cat,status,notes:null,car_id:activeCar.id};
+    return {name:line.replace(/:$/,'').trim(),price:null,supplier:null,category:cat,status,notes:null,car_id:activeCar.id};
+  });
+  setSyncing(true);
+  const {data,error}=await sb.from('build_parts').insert(toInsert).select();
+  setSyncing(false);
+  if(!error&&data){ parts=[...data,...parts]; localStorage.setItem('bt_parts_'+activeCar.id,JSON.stringify(parts)); showToast('✓ Imported '+data.length+' parts'); closeImport(); renderParts(); }
+  else showToast('⚠️ Import failed: '+(error?.message||'unknown'));
+}
+
+// ── EXPORT ───────────────────────────────────────
+function openExport(){ document.getElementById('exportModal').classList.add('open'); }
+function closeExport(){ document.getElementById('exportModal').classList.remove('open'); }
+
+function exportCSV(){
+  if(!activeCar) return;
+  const rows = [['Part Name','Category','Status','Price','Supplier','Notes']];
+  parts.forEach(p=>{
+    rows.push([p.name||'', p.category||'', statusLabel(p.status||''), p.price||'', p.supplier||'', (p.notes||'').replace(/\n/g,' ')]);
+  });
+  const csv = rows.map(r=>r.map(cell=>{
+    const s = String(cell).replace(/"/g,'""');
+    return /[",\n]/.test(s) ? '"'+s+'"' : s;
+  }).join(',')).join('\n');
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (activeCar.name||'car').replace(/[^a-z0-9]/gi,'_') + '_build_record.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  closeExport();
+  showToast('✓ CSV downloaded');
+}
+
+function exportPrintable(){
+  if(!activeCar) return;
+  const bought = parts.filter(p=>p.status==='bought');
+  const pending = parts.filter(p=>p.status==='pending');
+  const needed = parts.filter(p=>p.status==='needed');
+  const totalBought = bought.reduce((s,p)=>s+(p.price||0),0);
+  const totalPending = pending.reduce((s,p)=>s+(p.price||0),0);
+
+  const carSub = [activeCar.year, activeCar.make, activeCar.model].filter(Boolean).join(' ');
+
+  function rowsHtml(list){
+    if(!list.length) return '<tr><td colspan="5" style="color:#888;text-align:center;padding:16px">None</td></tr>';
+    return list.map(p=>`
+      <tr>
+        <td>${esc(p.name||'')}</td>
+        <td>${esc(p.category||'')}</td>
+        <td>${esc(p.supplier||'')}</td>
+        <td style="text-align:right">${p.price?fmt(p.price):'—'}</td>
+        <td>${esc(p.notes||'')}</td>
+      </tr>`).join('');
+  }
+
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(activeCar.name)} — Build Record</title>
+    <style>
+      body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;max-width:900px;margin:0 auto}
+      h1{font-size:24px;margin-bottom:2px}
+      .sub{color:#666;font-size:14px;margin-bottom:20px}
+      .summary{display:flex;gap:24px;margin-bottom:28px;padding:16px;background:#f5f5f5;border-radius:8px}
+      .summary div{flex:1;text-align:center}
+      .summary .val{font-size:20px;font-weight:bold}
+      .summary .lab{font-size:11px;color:#777;text-transform:uppercase;letter-spacing:0.5px}
+      h2{font-size:16px;margin:24px 0 8px;border-bottom:2px solid #E8440A;padding-bottom:4px}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      th{text-align:left;background:#eee;padding:8px;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;color:#555}
+      td{padding:8px;border-bottom:1px solid #eee;vertical-align:top}
+      .car-photo{width:100%;max-height:280px;object-fit:cover;border-radius:8px;margin-bottom:16px}
+      @media print{ body{padding:10px} }
+      .footer{margin-top:32px;font-size:11px;color:#999;text-align:center}
+    </style></head><body>
+      ${activeCar.photo_url?`<img src="${esc(activeCar.photo_url)}" class="car-photo">`:''}
+      <h1>${esc(activeCar.name)}</h1>
+      <div class="sub">${esc(carSub)}${activeCar.notes?' — '+esc(activeCar.notes):''}</div>
+      <div class="summary">
+        <div><div class="val">${fmt(totalBought)}</div><div class="lab">Total Spent</div></div>
+        <div><div class="val">${fmt(totalPending)}</div><div class="lab">On Order</div></div>
+        <div><div class="val">${parts.length}</div><div class="lab">Total Parts</div></div>
+      </div>
+
+      <h2>Purchased (${bought.length})</h2>
+      <table><tr><th>Part</th><th>Category</th><th>Supplier</th><th>Price</th><th>Notes</th></tr>${rowsHtml(bought)}</table>
+
+      <h2>On Order (${pending.length})</h2>
+      <table><tr><th>Part</th><th>Category</th><th>Supplier</th><th>Price</th><th>Notes</th></tr>${rowsHtml(pending)}</table>
+
+      <h2>Needed (${needed.length})</h2>
+      <table><tr><th>Part</th><th>Category</th><th>Supplier</th><th>Price</th><th>Notes</th></tr>${rowsHtml(needed)}</table>
+
+      <div class="footer">Generated by BuildTracker — ${new Date().toLocaleDateString('en-AU')}</div>
+    </body></html>
+  `);
+  win.document.close();
+  setTimeout(()=>win.print(), 400);
+  closeExport();
+}
+
+// ── REALTIME ───────────────────────────────────────
+function subscribeRealtime(){
+  sb.channel('parts_rt')
+    .on('postgres_changes',{event:'*',schema:'public',table:'build_parts'},payload=>{
+      if(!activeCar||payload.new?.car_id!==activeCar.id&&payload.old?.car_id!==activeCar.id) return;
+      if(payload.eventType==='INSERT') parts.unshift(payload.new);
+      else if(payload.eventType==='UPDATE'){ const i=parts.findIndex(p=>p.id===payload.new.id); if(i!==-1) parts[i]=payload.new; }
+      else if(payload.eventType==='DELETE') parts=parts.filter(p=>p.id!==payload.old.id);
+      renderParts();
+    }).subscribe();
+}
+
+// ── CLOSE ON OVERLAY CLICK ─────────────────────────
+['carModal','partModal','importModal','exportModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{ if(e.target===document.getElementById(id)) document.getElementById(id).classList.remove('open'); });
+});
+
+// ── EXPOSE ─────────────────────────────────────────
+window.goToGarage=goToGarage;
+window.openCar=openCar;
+window.openAddCar=openAddCar;
+window.openEditCar=openEditCar;
+window.closeCarModal=closeCarModal;
+window.handleCarPhoto=handleCarPhoto;
+window.saveCar=saveCar;
+window.deleteCar=deleteCar;
+window.openModal=openModal;
+window.closePartModal=closePartModal;
+window.openEditPart=openEditPart;
+window.savePart=savePart;
+window.deletePart=deletePart;
+window.markBought=markBought;
+window.setCategory=setCategory;
+window.handleInvoicePhoto=handleInvoicePhoto;
+window.removeInvoicePhoto=removeInvoicePhoto;
+window.openImport=openImport;
+window.closeImport=closeImport;
+window.runImport=runImport;
+window.openExport=openExport;
+window.closeExport=closeExport;
+window.exportCSV=exportCSV;
+window.exportPrintable=exportPrintable;
+window.handleAuthSubmit=handleAuthSubmit;
+window.toggleAuthMode=toggleAuthMode;
+window.signOut=signOut;
+
+// ── AUTH ───────────────────────────────────────────
+let authMode = 'signin'; // or 'signup'
+
+function toggleAuthMode(){
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  document.getElementById('loginModeLabel').textContent = authMode === 'signin' ? 'Sign in to access your garage' : 'Create an account to get started';
+  document.getElementById('loginSubmitBtn').textContent = authMode === 'signin' ? 'Sign In' : 'Sign Up';
+  document.getElementById('loginToggleWrap').innerHTML = authMode === 'signin'
+    ? `Don't have an account? <a onclick="toggleAuthMode()">Sign up</a>`
+    : `Already have an account? <a onclick="toggleAuthMode()">Sign in</a>`;
+  document.getElementById('loginStatus').textContent = '';
+}
+
+async function handleAuthSubmit(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const statusEl = document.getElementById('loginStatus');
+  if(!email || !password){ statusEl.textContent = 'Enter email and password'; return; }
+
+  statusEl.textContent = authMode === 'signin' ? 'Signing in…' : 'Creating account…';
+
+  if(authMode === 'signin'){
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){ statusEl.textContent = error.message; }
+  } else {
+    const { error } = await sb.auth.signUp({ email, password });
+    if(error){
+      statusEl.textContent = error.message;
+    } else {
+      statusEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+    }
+  }
+}
+
+async function signOut(){
+  await sb.auth.signOut();
+  currentUser = null;
+  cars = [];
+  parts = [];
+  showLogin();
+}
+
+function showLogin(){
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('garageScreen').style.display='none';
+  document.getElementById('trackerScreen').style.display='none';
+}
+
+function showGarage(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('garageScreen').style.display='block';
+  document.getElementById('trackerScreen').style.display='none';
+  document.getElementById('userEmailLabel').textContent = currentUser?.email || 'Select a car to view its build tracker';
+  loadGarage();
+}
+
+async function initAuth(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session?.user){
+    currentUser = session.user;
+    showGarage();
+  } else {
+    showLogin();
+  }
+
+  sb.auth.onAuthStateChange((event, session) => {
+    if(event === 'SIGNED_IN' && session?.user){
+      currentUser = session.user;
+      showGarage();
+    } else if(event === 'SIGNED_OUT'){
+      currentUser = null;
+      showLogin();
+    }
+  });
+}
+
+// ── BOOT ───────────────────────────────────────────
+initAuth();
+subscribeRealtime();
+
+})();
+</script>
+<script>
+// Actively unregister any previously installed service worker
+// (a stale/broken SW was causing the standalone app to 404 when offline-launched)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+  if (window.caches) {
+    caches.keys().then(names => names.forEach(name => caches.delete(name)));
+  }
+}
+</script>
+</body>
+</html>
